@@ -43,6 +43,8 @@ const normalizeModelAliases = (models: unknown): ModelAlias[] => {
       const alias = item.alias || item.display_name || item.displayName;
       const priority = item.priority ?? item['priority'];
       const testModel = item['test-model'] ?? item.testModel;
+      const configName = item['config-name'] ?? item.configName ?? item['config_name'];
+      const modelName = item['model-name'] ?? item.modelName ?? item['model_name'];
       const entry: ModelAlias = { name: String(name) };
       if (alias && alias !== name) {
         entry.alias = String(alias);
@@ -55,6 +57,12 @@ const normalizeModelAliases = (models: unknown): ModelAlias[] => {
       }
       if (testModel) {
         entry.testModel = String(testModel);
+      }
+      if (configName) {
+        entry.configName = String(configName);
+      }
+      if (modelName) {
+        entry.modelName = String(modelName);
       }
       return entry;
     })

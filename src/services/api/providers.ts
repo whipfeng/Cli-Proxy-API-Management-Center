@@ -1,7 +1,6 @@
 /**
  * AI 提供商相关 API
  */
-
 import { apiClient } from './client';
 import {
   normalizeGeminiKeyConfig,
@@ -15,26 +14,21 @@ import type {
   ApiKeyEntry,
   ModelAlias
 } from '@/types';
-
 const serializeHeaders = (headers?: Record<string, string>) => (headers && Object.keys(headers).length ? headers : undefined);
-
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   value !== null && typeof value === 'object' && !Array.isArray(value);
-
 const extractArrayPayload = (data: unknown, key: string): unknown[] => {
   if (Array.isArray(data)) return data;
   if (!isRecord(data)) return [];
   const candidate = data[key] ?? data.items ?? data.data ?? data;
   return Array.isArray(candidate) ? candidate : [];
 };
-
 const buildProviderDeleteQuery = (apiKey: string, baseUrl?: string) => {
   const params = new URLSearchParams();
   params.set('api-key', apiKey.trim());
   params.set('base-url', (baseUrl ?? '').trim());
   return `?${params.toString()}`;
 };
-
 const serializeModelAliases = (models?: ModelAlias[]) =>
   Array.isArray(models)
     ? models
@@ -50,11 +44,16 @@ const serializeModelAliases = (models?: ModelAlias[]) =>
           if (model.testModel) {
             payload['test-model'] = model.testModel;
           }
+          if (model.configName) {
+            payload['config-name'] = model.configName;
+          }
+          if (model.modelName) {
+            payload['model-name'] = model.modelName;
+          }
           return payload;
         })
         .filter(Boolean)
     : undefined;
-
 const serializeApiKeyEntry = (entry: ApiKeyEntry) => {
   const payload: Record<string, unknown> = { 'api-key': entry.apiKey };
   if (entry.proxyUrl) payload['proxy-url'] = entry.proxyUrl;
@@ -62,7 +61,6 @@ const serializeApiKeyEntry = (entry: ApiKeyEntry) => {
   if (headers) payload.headers = headers;
   return payload;
 };
-
 const serializeProviderKey = (config: ProviderKeyConfig) => {
   const payload: Record<string, unknown> = { 'api-key': config.apiKey };
   if (config.priority !== undefined) payload.priority = config.priority;
@@ -91,7 +89,6 @@ const serializeProviderKey = (config: ProviderKeyConfig) => {
   }
   return payload;
 };
-
 const serializeVertexModelAliases = (models?: ModelAlias[]) =>
   Array.isArray(models)
     ? models
@@ -103,7 +100,6 @@ const serializeVertexModelAliases = (models?: ModelAlias[]) =>
         })
         .filter(Boolean)
     : undefined;
-
 const serializeVertexKey = (config: ProviderKeyConfig) => {
   const payload: Record<string, unknown> = { 'api-key': config.apiKey };
   if (config.priority !== undefined) payload.priority = config.priority;
@@ -119,7 +115,6 @@ const serializeVertexKey = (config: ProviderKeyConfig) => {
   }
   return payload;
 };
-
 const serializeGeminiKey = (config: GeminiKeyConfig) => {
   const payload: Record<string, unknown> = { 'api-key': config.apiKey };
   if (config.priority !== undefined) payload.priority = config.priority;
@@ -135,7 +130,6 @@ const serializeGeminiKey = (config: GeminiKeyConfig) => {
   }
   return payload;
 };
-
 const serializeOpenAIProvider = (provider: OpenAIProviderConfig) => {
   const payload: Record<string, unknown> = {
     name: provider.name,
@@ -154,83 +148,80 @@ const serializeOpenAIProvider = (provider: OpenAIProviderConfig) => {
   if (provider.testModel) payload['test-model'] = provider.testModel;
   return payload;
 };
-
 export const providersApi = {
   async getGeminiKeys(): Promise<GeminiKeyConfig[]> {
     const data = await apiClient.get('/gemini-api-key');
     const list = extractArrayPayload(data, 'gemini-api-key');
     return list.map((item) => normalizeGeminiKeyConfig(item)).filter(Boolean) as GeminiKeyConfig[];
   },
-
   saveGeminiKeys: (configs: GeminiKeyConfig[]) =>
     apiClient.put('/gemini-api-key', configs.map((item) => serializeGeminiKey(item))),
-
   updateGeminiKey: (index: number, value: GeminiKeyConfig) =>
     apiClient.patch('/gemini-api-key', { index, value: serializeGeminiKey(value) }),
-
   deleteGeminiKey: (apiKey: string, baseUrl?: string) =>
     apiClient.delete(`/gemini-api-key${buildProviderDeleteQuery(apiKey, baseUrl)}`),
-
   async getCodexConfigs(): Promise<ProviderKeyConfig[]> {
     const data = await apiClient.get('/codex-api-key');
     const list = extractArrayPayload(data, 'codex-api-key');
     return list.map((item) => normalizeProviderKeyConfig(item)).filter(Boolean) as ProviderKeyConfig[];
   },
-
   saveCodexConfigs: (configs: ProviderKeyConfig[]) =>
     apiClient.put('/codex-api-key', configs.map((item) => serializeProviderKey(item))),
-
   updateCodexConfig: (index: number, value: ProviderKeyConfig) =>
     apiClient.patch('/codex-api-key', { index, value: serializeProviderKey(value) }),
-
   deleteCodexConfig: (apiKey: string, baseUrl?: string) =>
     apiClient.delete(`/codex-api-key${buildProviderDeleteQuery(apiKey, baseUrl)}`),
-
   async getClaudeConfigs(): Promise<ProviderKeyConfig[]> {
     const data = await apiClient.get('/claude-api-key');
     const list = extractArrayPayload(data, 'claude-api-key');
     return list.map((item) => normalizeProviderKeyConfig(item)).filter(Boolean) as ProviderKeyConfig[];
   },
-
   saveClaudeConfigs: (configs: ProviderKeyConfig[]) =>
     apiClient.put('/claude-api-key', configs.map((item) => serializeProviderKey(item))),
-
   updateClaudeConfig: (index: number, value: ProviderKeyConfig) =>
     apiClient.patch('/claude-api-key', { index, value: serializeProviderKey(value) }),
-
   deleteClaudeConfig: (apiKey: string, baseUrl?: string) =>
     apiClient.delete(`/claude-api-key${buildProviderDeleteQuery(apiKey, baseUrl)}`),
-
   async getVertexConfigs(): Promise<ProviderKeyConfig[]> {
     const data = await apiClient.get('/vertex-api-key');
     const list = extractArrayPayload(data, 'vertex-api-key');
     return list.map((item) => normalizeProviderKeyConfig(item)).filter(Boolean) as ProviderKeyConfig[];
   },
-
   saveVertexConfigs: (configs: ProviderKeyConfig[]) =>
     apiClient.put('/vertex-api-key', configs.map((item) => serializeVertexKey(item))),
-
   updateVertexConfig: (index: number, value: ProviderKeyConfig) =>
     apiClient.patch('/vertex-api-key', { index, value: serializeVertexKey(value) }),
-
   deleteVertexConfig: (apiKey: string, baseUrl?: string) =>
     apiClient.delete(`/vertex-api-key${buildProviderDeleteQuery(apiKey, baseUrl)}`),
-
   async getOpenAIProviders(): Promise<OpenAIProviderConfig[]> {
     const data = await apiClient.get('/openai-compatibility');
     const list = extractArrayPayload(data, 'openai-compatibility');
     return list.map((item) => normalizeOpenAIProvider(item)).filter(Boolean) as OpenAIProviderConfig[];
   },
-
   saveOpenAIProviders: (providers: OpenAIProviderConfig[]) =>
     apiClient.put('/openai-compatibility', providers.map((item) => serializeOpenAIProvider(item))),
-
   updateOpenAIProvider: (index: number, value: OpenAIProviderConfig) =>
     apiClient.patch('/openai-compatibility', { index, value: serializeOpenAIProvider(value) }),
-
   updateOpenAIProviderDisabled: (index: number, disabled: boolean) =>
     apiClient.patch('/openai-compatibility', { index, value: { disabled } }),
-
   deleteOpenAIProvider: (name: string) =>
-    apiClient.delete(`/openai-compatibility?name=${encodeURIComponent(name)}`)
+    apiClient.delete(`/openai-compatibility?name=${encodeURIComponent(name)}`),
+
+  async getTraeConfigs(): Promise<ProviderKeyConfig[]> {
+    const data = await apiClient.get('/trae-api-key');
+    const list = extractArrayPayload(data, 'trae-api-key');
+    return list.map((item) => normalizeProviderKeyConfig(item)).filter(Boolean) as ProviderKeyConfig[];
+  },
+
+  saveTraeConfigs: (configs: ProviderKeyConfig[]) =>
+    apiClient.put('/trae-api-key', configs.map((item) => serializeProviderKey(item))),
+
+  updateTraeConfig: (index: number, value: ProviderKeyConfig) =>
+    apiClient.patch('/trae-api-key', { index, value: serializeProviderKey(value) }),
+
+  deleteTraeConfig: (apiKey: string, baseUrl?: string) =>
+    apiClient.delete(`/trae-api-key${buildProviderDeleteQuery(apiKey, baseUrl)}`),
+
+  testTraeKey: (payload: { baseUrl: string; apiKey: string; configName: string; modelName: string }) =>
+    apiClient.post('/trae-api-key/test', payload),
 };

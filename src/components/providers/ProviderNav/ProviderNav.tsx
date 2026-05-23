@@ -12,7 +12,7 @@ import iconVertex from '@/assets/icons/vertex.svg';
 import iconAmp from '@/assets/icons/amp.svg';
 import styles from './ProviderNav.module.scss';
 
-export type ProviderId = 'gemini' | 'codex' | 'claude' | 'vertex' | 'ampcode' | 'openai';
+export type ProviderId = 'gemini' | 'codex' | 'claude' | 'trae' | 'vertex' | 'ampcode' | 'openai';
 
 interface ProviderNavItem {
   id: ProviderId;
@@ -24,6 +24,7 @@ const PROVIDERS: ProviderNavItem[] = [
   { id: 'gemini', label: 'Gemini', getIcon: () => iconGemini },
   { id: 'codex', label: 'Codex', getIcon: () => iconCodex },
   { id: 'claude', label: 'Claude', getIcon: () => iconClaude },
+  { id: 'trae', label: 'Trae', getIcon: () => iconClaude },
   { id: 'vertex', label: 'Vertex', getIcon: () => iconVertex },
   { id: 'ampcode', label: 'Ampcode', getIcon: () => iconAmp },
   { id: 'openai', label: 'OpenAI', getIcon: (theme) => (theme === 'dark' ? iconOpenaiDark : iconOpenaiLight) },
@@ -45,6 +46,7 @@ export function ProviderNav() {
     gemini: null,
     codex: null,
     claude: null,
+    trae: null,
     vertex: null,
     ampcode: null,
     openai: null,

@@ -7,6 +7,7 @@ import {
   CodexSection,
   GeminiSection,
   OpenAISection,
+  TraeSection,
   VertexSection,
   ProviderNav,
   useProviderRecentRequests,
@@ -54,6 +55,9 @@ export function AiProvidersPage() {
   const [openaiProviders, setOpenaiProviders] = useState<OpenAIProviderConfig[]>(
     () => config?.openaiCompatibility || []
   );
+  const [traeConfigs, setTraeConfigs] = useState<ProviderKeyConfig[]>(
+    () => config?.traeApiKeys || []
+  );
 
   const [configSwitchingKey, setConfigSwitchingKey] = useState<string | null>(null);
 
@@ -80,11 +84,12 @@ export function AiProvidersPage() {
     }
     setError('');
     try {
-      const [configResult, vertexResult, ampcodeResult, openaiResult] = await Promise.allSettled([
+      const [configResult, vertexResult, ampcodeResult, openaiResult, traeResult] = await Promise.allSettled([
         fetchConfig(),
         providersApi.getVertexConfigs(),
         ampcodeApi.getAmpcode(),
         providersApi.getOpenAIProviders(),
+        providersApi.getTraeConfigs(),
       ]);
 
       if (configResult.status !== 'fulfilled') {
@@ -114,6 +119,12 @@ export function AiProvidersPage() {
         updateConfigValue('openai-compatibility', openaiResult.value || []);
         clearCache('openai-compatibility');
       }
+
+      if (traeResult.status === 'fulfilled') {
+        setTraeConfigs(traeResult.value || []);
+        updateConfigValue('trae-api-key', traeResult.value || []);
+        clearCache('trae-api-key');
+      }
     } catch (err: unknown) {
       const message = getErrorMessage(err) || t('notification.refresh_failed');
       setError(message);
@@ -139,12 +150,14 @@ export function AiProvidersPage() {
     if (config?.claudeApiKeys) setClaudeConfigs(config.claudeApiKeys);
     if (config?.vertexApiKeys) setVertexConfigs(config.vertexApiKeys);
     if (config?.openaiCompatibility) setOpenaiProviders(config.openaiCompatibility);
+    if (config?.traeApiKeys) setTraeConfigs(config.traeApiKeys);
   }, [
     config?.geminiApiKeys,
     config?.codexApiKeys,
     config?.claudeApiKeys,
     config?.vertexApiKeys,
     config?.openaiCompatibility,
+    config?.traeApiKeys,
   ]);
 
   const handleRecentRequestsRefresh = useCallback(async () => {
@@ -185,7 +198,7 @@ export function AiProvidersPage() {
   };
 
   const setConfigEnabled = async (
-    provider: 'gemini' | 'codex' | 'claude' | 'vertex',
+    provider: 'gemini' | 'codex' | 'claude' | 'trae' | 'vertex',
     index: number,
     enabled: boolean
   ) => {
@@ -230,7 +243,9 @@ export function AiProvidersPage() {
         ? codexConfigs
         : provider === 'claude'
           ? claudeConfigs
-          : vertexConfigs;
+          : provider === 'trae'
+            ? traeConfigs
+            : vertexConfigs;
     const current = source[index];
     if (!current) return;
 
@@ -252,6 +267,10 @@ export function AiProvidersPage() {
       setClaudeConfigs(nextList);
       updateConfigValue('claude-api-key', nextList);
       clearCache('claude-api-key');
+    } else if (provider === 'trae') {
+      setTraeConfigs(nextList);
+      updateConfigValue('trae-api-key', nextList);
+      clearCache('trae-api-key');
     } else {
       setVertexConfigs(nextList);
       updateConfigValue('vertex-api-key', nextList);
@@ -263,6 +282,8 @@ export function AiProvidersPage() {
         await providersApi.saveCodexConfigs(nextList);
       } else if (provider === 'claude') {
         await providersApi.saveClaudeConfigs(nextList);
+      } else if (provider === 'trae') {
+        await providersApi.saveTraeConfigs(nextList);
       } else {
         await providersApi.saveVertexConfigs(nextList);
       }
@@ -280,6 +301,10 @@ export function AiProvidersPage() {
         setClaudeConfigs(previousList);
         updateConfigValue('claude-api-key', previousList);
         clearCache('claude-api-key');
+      } else if (provider === 'trae') {
+        setTraeConfigs(previousList);
+        updateConfigValue('trae-api-key', previousList);
+        clearCache('trae-api-key');
       } else {
         setVertexConfigs(previousList);
         updateConfigValue('vertex-api-key', previousList);
@@ -405,6 +430,30 @@ export function AiProvidersPage() {
     });
   };
 
+  const deleteTrae = async (index: number) => {
+    const entry = traeConfigs[index];
+    if (!entry) return;
+    showConfirmation({
+      title: t('ai_providers.trae_delete_title', { defaultValue: '删除Trae配置' }),
+      message: t('ai_providers.trae_delete_confirm', { defaultValue: '确定要删除这个Trae配置吗？' }),
+      variant: 'danger',
+      confirmText: t('common.confirm'),
+      onConfirm: async () => {
+        try {
+          await providersApi.deleteTraeConfig(entry.apiKey, entry.baseUrl);
+          const next = traeConfigs.filter((_, idx) => idx !== index);
+          setTraeConfigs(next);
+          updateConfigValue('trae-api-key', next);
+          clearCache('trae-api-key');
+          showNotification(t('notification.trae_config_deleted', { defaultValue: 'Trae配置删除成功' }), 'success');
+        } catch (err: unknown) {
+          const message = getErrorMessage(err);
+          showNotification(`${t('notification.delete_failed')}: ${message}`, 'error');
+        }
+      },
+    });
+  };
+
   return (
     <div className={styles.container}>
       <h1 className={styles.pageTitle}>{t('ai_providers.title')}</h1>
@@ -450,6 +499,20 @@ export function AiProvidersPage() {
             onEdit={(index) => openEditor(`/ai-providers/claude/${index}`)}
             onDelete={(index) => void deleteProviderEntry('claude', index)}
             onToggle={(index, enabled) => void setConfigEnabled('claude', index, enabled)}
+          />
+        </div>
+
+        <div id="provider-trae">
+          <TraeSection
+            configs={traeConfigs}
+            usageByProvider={usageByProvider}
+            loading={loading}
+            disableControls={disableControls}
+            isSwitching={isSwitching}
+            onAdd={() => openEditor('/ai-providers/trae/new')}
+            onEdit={(index) => openEditor(`/ai-providers/trae/${index}`)}
+            onDelete={(index) => void deleteTrae(index)}
+            onToggle={(index, enabled) => void setConfigEnabled('trae', index, enabled)}
           />
         </div>
 

@@ -3,6 +3,7 @@ import { DashboardPage } from '@/pages/DashboardPage';
 import { AiProvidersPage } from '@/pages/AiProvidersPage';
 import { AiProvidersAmpcodeEditPage } from '@/pages/AiProvidersAmpcodeEditPage';
 import { AiProvidersClaudeEditLayout } from '@/pages/AiProvidersClaudeEditLayout';
+import { AiProvidersTraeEditPage } from '@/pages/AiProvidersTraeEditPage';
 import { AiProvidersClaudeEditPage } from '@/pages/AiProvidersClaudeEditPage';
 import { AiProvidersClaudeModelsPage } from '@/pages/AiProvidersClaudeModelsPage';
 import { AiProvidersCodexEditPage } from '@/pages/AiProvidersCodexEditPage';
@@ -18,6 +19,7 @@ import { OAuthPage } from '@/pages/OAuthPage';
 import { QuotaPage } from '@/pages/QuotaPage';
 import { ConfigPage } from '@/pages/ConfigPage';
 import { LogsPage } from '@/pages/LogsPage';
+import { UsagePage } from '@/pages/UsagePage';
 import { SystemPage } from '@/pages/SystemPage';
 
 const mainRoutes = [
@@ -37,6 +39,8 @@ const mainRoutes = [
       { path: 'models', element: <AiProvidersClaudeModelsPage /> },
     ],
   },
+  { path: '/ai-providers/trae/new', element: <AiProvidersTraeEditPage /> },
+  { path: '/ai-providers/trae/:index', element: <AiProvidersTraeEditPage /> },
   {
     path: '/ai-providers/claude/:index',
     element: <AiProvidersClaudeEditLayout />,
@@ -71,6 +75,7 @@ const mainRoutes = [
   { path: '/auth-files/oauth-model-alias', element: <AuthFilesOAuthModelAliasEditPage /> },
   { path: '/oauth', element: <OAuthPage /> },
   { path: '/quota', element: <QuotaPage /> },
+  { path: '/usage', element: <UsagePage /> },
   { path: '/config', element: <ConfigPage /> },
   { path: '/logs', element: <LogsPage /> },
   { path: '/system', element: <SystemPage /> },

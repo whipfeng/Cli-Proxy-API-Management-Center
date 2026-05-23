@@ -28,6 +28,7 @@ export interface Config {
   geminiApiKeys?: GeminiKeyConfig[];
   codexApiKeys?: ProviderKeyConfig[];
   claudeApiKeys?: ProviderKeyConfig[];
+  traeApiKeys?: ProviderKeyConfig[];
   vertexApiKeys?: ProviderKeyConfig[];
   openaiCompatibility?: OpenAIProviderConfig[];
   oauthExcludedModels?: Record<string, string[]>;
@@ -50,6 +51,7 @@ export type RawConfigSection =
   | 'gemini-api-key'
   | 'codex-api-key'
   | 'claude-api-key'
+  | 'trae-api-key'
   | 'vertex-api-key'
   | 'openai-compatibility'
   | 'oauth-excluded-models';

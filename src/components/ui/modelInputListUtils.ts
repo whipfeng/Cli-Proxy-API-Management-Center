@@ -3,6 +3,8 @@ import type { ModelAlias } from '@/types';
 export interface ModelEntry {
   name: string;
   alias: string;
+  configName?: string;
+  modelName?: string;
 }
 
 export const modelsToEntries = (models?: ModelAlias[]): ModelEntry[] => {
@@ -11,7 +13,9 @@ export const modelsToEntries = (models?: ModelAlias[]): ModelEntry[] => {
   }
   return models.map((model) => ({
     name: model.name || '',
-    alias: model.alias || ''
+    alias: model.alias || '',
+    configName: model.configName || '',
+    modelName: model.modelName || '',
   }));
 };
 
@@ -23,6 +27,14 @@ export const entriesToModels = (entries: ModelEntry[]): ModelAlias[] => {
       const alias = entry.alias.trim();
       if (alias && alias !== model.name) {
         model.alias = alias;
+      }
+      const configName = entry.configName?.trim();
+      const modelName = entry.modelName?.trim();
+      if (configName) {
+        model.configName = configName;
+      }
+      if (modelName) {
+        model.modelName = modelName;
       }
       return model;
     });
