@@ -163,8 +163,10 @@ const normalizeProviderKeyConfig = (item: unknown): ProviderKeyConfig | null => 
       record?.excludedModels ??
       record?.['excluded_models'] ??
       record?.excluded_models
-  );
+);
   if (excludedModels.length) config.excludedModels = excludedModels;
+  const refreshToken = record?.['refresh-token'] ?? record?.refreshToken ?? record?.['refresh_token'];
+  if (refreshToken) config.refreshToken = String(refreshToken);
   const authIndex = normalizeAuthIndex(
     record?.['auth-index'] ?? record?.authIndex ?? record?.['auth_index']
   );

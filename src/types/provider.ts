@@ -49,6 +49,7 @@ export interface ProviderKeyConfig {
   excludedModels?: string[];
   cloak?: CloakConfig;
   authIndex?: string;
+  refreshToken?: string;
 }
 
 export interface OpenAIProviderConfig {
