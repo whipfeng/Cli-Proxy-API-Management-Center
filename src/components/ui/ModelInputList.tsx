@@ -79,6 +79,15 @@ export function ModelInputList({
               onChange={(e) => updateEntry(index, 'alias', e.target.value)}
               disabled={disabled}
             />
+            {entry.contextLength != null && (
+              <span className="model-context-length-badge">
+                {entry.contextLength >= 1000000
+                  ? `${(entry.contextLength / 1000000).toFixed(1)}M`
+                  : entry.contextLength >= 1000
+                    ? `${Math.round(entry.contextLength / 1000)}K`
+                    : String(entry.contextLength)}
+              </span>
+            )}
             <Button
               variant="ghost"
               size="sm"

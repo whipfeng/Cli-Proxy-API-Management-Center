@@ -378,7 +378,7 @@ export function AiProvidersClaudeEditLayout() {
         selectedModels.forEach((model) => {
           const name = model.name.trim();
           if (!name || mergedMap.has(name)) return;
-          mergedMap.set(name, { name, alias: model.alias ?? '' });
+          mergedMap.set(name, { name, alias: model.alias ?? '', contextLength: model.contextLength });
           addedCount += 1;
         });
 

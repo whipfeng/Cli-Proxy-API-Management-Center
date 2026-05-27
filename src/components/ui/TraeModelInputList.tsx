@@ -9,6 +9,7 @@ interface TraeModelInputListProps {
   addLabel?: string;
   disabled?: boolean;
   namePlaceholder?: string;
+  displayNamePlaceholder?: string;
   configNamePlaceholder?: string;
   modelNamePlaceholder?: string;
   hideAddButton?: boolean;
@@ -27,6 +28,7 @@ export function TraeModelInputList({
   addLabel,
   disabled = false,
   namePlaceholder = 'client model name',
+  displayNamePlaceholder = 'display name',
   configNamePlaceholder = 'config name',
   modelNamePlaceholder = 'model name',
   hideAddButton = false,
@@ -38,12 +40,12 @@ export function TraeModelInputList({
   removeButtonTitle = 'Remove',
   removeButtonAriaLabel = 'Remove',
 }: TraeModelInputListProps) {
-  const currentEntries = entries.length ? entries : [{ name: '', alias: '', configName: '', modelName: '' }];
+  const currentEntries = entries.length ? entries : [{ name: '', alias: '', displayName: '', configName: '', modelName: '' }];
   const containerClassName = ['header-input-list', className].filter(Boolean).join(' ');
   const inputClassNames = ['input', inputClassName].filter(Boolean).join(' ');
   const rowClassNames = ['header-input-row', rowClassName].filter(Boolean).join(' ');
 
-  const updateEntry = (index: number, field: 'name' | 'configName' | 'modelName', value: string) => {
+  const updateEntry = (index: number, field: 'name' | 'displayName' | 'configName' | 'modelName', value: string) => {
     const next = currentEntries.map((entry, idx) => (idx === index ? { ...entry, [field]: value } : entry));
     onChange(next);
   };
@@ -52,13 +54,13 @@ export function TraeModelInputList({
     if (onAdd) {
       onAdd();
     } else {
-      onChange([...currentEntries, { name: '', alias: '', configName: '', modelName: '' }]);
+      onChange([...currentEntries, { name: '', alias: '', displayName: '', configName: '', modelName: '' }]);
     }
   };
 
   const removeEntry = (index: number) => {
     const next = currentEntries.filter((_, idx) => idx !== index);
-    onChange(next.length ? next : [{ name: '', alias: '', configName: '', modelName: '' }]);
+    onChange(next.length ? next : [{ name: '', alias: '', displayName: '', configName: '', modelName: '' }]);
   };
 
   return (
@@ -75,6 +77,13 @@ export function TraeModelInputList({
             />
             <input
               className={inputClassNames}
+              placeholder={displayNamePlaceholder}
+              value={entry.displayName ?? ''}
+              onChange={(e) => updateEntry(index, 'displayName', e.target.value)}
+              disabled={disabled}
+            />
+            <input
+              className={inputClassNames}
               placeholder={configNamePlaceholder}
               value={entry.configName ?? ''}
               onChange={(e) => updateEntry(index, 'configName', e.target.value)}
@@ -87,6 +96,15 @@ export function TraeModelInputList({
               onChange={(e) => updateEntry(index, 'modelName', e.target.value)}
               disabled={disabled}
             />
+            {entry.contextLength != null && (
+              <span className="model-context-length-badge">
+                {entry.contextLength >= 1000000
+                  ? `${(entry.contextLength / 1000000).toFixed(1)}M`
+                  : entry.contextLength >= 1000
+                    ? `${Math.round(entry.contextLength / 1000)}K`
+                    : String(entry.contextLength)}
+              </span>
+            )}
             <Button
               variant="ghost"
               size="sm"

@@ -33,8 +33,9 @@ const buildEmptyForm = (): ProviderFormState => ({
   headers: [],
   models: [],
   excludedModels: [],
-  modelEntries: [{ name: '', alias: '', configName: '', modelName: '' }],
+  modelEntries: [{ name: '', alias: '', displayName: '', configName: '', modelName: '' }],
   excludedText: '',
+  refreshToken: '',
 });
 
 const parseIndexParam = (value: string | undefined) => {
@@ -43,13 +44,14 @@ const parseIndexParam = (value: string | undefined) => {
   return Number.isFinite(parsed) ? parsed : null;
 };
 
-const normalizeModelEntries = (entries: Array<{ name: string; alias: string; configName?: string; modelName?: string }>) =>
-  (entries ?? []).reduce<Array<{ name: string; alias: string; configName?: string; modelName?: string }>>((acc, entry) => {
+const normalizeModelEntries = (entries: Array<{ name: string; alias: string; displayName?: string; configName?: string; modelName?: string }>) =>
+  (entries ?? []).reduce<Array<{ name: string; alias: string; displayName?: string; configName?: string; modelName?: string }>>((acc, entry) => {
     const name = String(entry?.name ?? '').trim();
+    const displayName = String(entry?.displayName ?? '').trim();
     const configName = String(entry?.configName ?? '').trim();
     const modelName = String(entry?.modelName ?? '').trim();
     if (!name && !configName && !modelName) return acc;
-    acc.push({ name, alias: name, configName, modelName });
+    acc.push({ name, alias: name, displayName, configName, modelName });
     return acc;
   }, []);
 
@@ -62,6 +64,7 @@ type TraeFormBaseline = {
   headers: ReturnType<typeof normalizeHeaderEntries>;
   models: ReturnType<typeof normalizeModelEntries>;
   excludedModels: string[];
+  refreshToken: string;
 };
 
 const buildTraeBaseline = (form: ProviderFormState): TraeFormBaseline => ({
@@ -74,6 +77,7 @@ const buildTraeBaseline = (form: ProviderFormState): TraeFormBaseline => ({
   headers: normalizeHeaderEntries(form.headers),
   models: normalizeModelEntries(form.modelEntries),
   excludedModels: parseExcludedModels(form.excludedText ?? ''),
+  refreshToken: String(form.refreshToken ?? '').trim(),
 });
 
 export function AiProvidersTraeEditPage() {
@@ -177,6 +181,7 @@ export function AiProvidersTraeEditPage() {
         headers: headersToEntries(initialData.headers),
         modelEntries: modelsToEntries(initialData.models),
         excludedText: excludedModelsToText(initialData.excludedModels),
+        refreshToken: initialData.refreshToken || '',
       };
       setForm(nextForm);
       setBaseline(buildTraeBaseline(nextForm));
@@ -221,6 +226,7 @@ export function AiProvidersTraeEditPage() {
     baseline.prefix !== String(form.prefix ?? '').trim() ||
     baseline.baseUrl !== String(form.baseUrl ?? '').trim() ||
     baseline.proxyUrl !== String(form.proxyUrl ?? '').trim() ||
+    baseline.refreshToken !== String(form.refreshToken ?? '').trim() ||
     isHeadersDirty ||
     isModelsDirty ||
     isExcludedModelsDirty;
@@ -229,6 +235,7 @@ export function AiProvidersTraeEditPage() {
   const [testStatus, setTestStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [testMessage, setTestMessage] = useState('');
   const [testModelIndex, setTestModelIndex] = useState(0);
+  const [importing, setImporting] = useState(false);
 
   const validModels = useMemo(
     () => form.modelEntries.filter((e) => e.name.trim() && e.configName?.trim() && e.modelName?.trim()),
@@ -244,8 +251,11 @@ export function AiProvidersTraeEditPage() {
   const runTest = useCallback(async () => {
     if (testStatus === 'loading') return;
     const baseUrl = (form.baseUrl ?? '').trim() || DEFAULT_TRAE_BASE_URL;
-    const apiKey = form.apiKey.trim();
-    if (!apiKey) {
+    const rawApiKey = form.apiKey.trim();
+    // Treat placeholder as empty for test purposes
+    const apiKey = rawApiKey === '__TRAE_REFRESH_TOKEN_ONLY__' ? '' : rawApiKey;
+    const refreshToken = (form.refreshToken ?? '').trim();
+    if (!apiKey && !refreshToken) {
       setTestStatus('error');
       setTestMessage(t('notification.trae_test_key_required', { defaultValue: 'API密钥不能为空' }));
       return;
@@ -268,7 +278,7 @@ export function AiProvidersTraeEditPage() {
     setTestStatus('loading');
     setTestMessage(t('ai_providers.trae_test_running', { defaultValue: '测试中...' }));
     try {
-      const result = (await providersApi.testTraeKey({ baseUrl, apiKey, configName, modelName })) as {
+      const result = (await providersApi.testTraeKey({ baseUrl, apiKey, refreshToken: refreshToken || undefined, configName, modelName })) as {
         success: boolean;
         message?: string;
       };
@@ -290,6 +300,67 @@ export function AiProvidersTraeEditPage() {
       setTestMessage(message || t('ai_providers.trae_test_failed', { defaultValue: '连接失败' }));
     }
   }, [form, testStatus, t, validModels, testModelIndex]);
+
+  const handleImportModels = useCallback(async () => {
+    const baseUrl = (form.baseUrl ?? '').trim() || DEFAULT_TRAE_BASE_URL;
+    const rawApiKey = form.apiKey.trim();
+    const apiKey = rawApiKey === '__TRAE_REFRESH_TOKEN_ONLY__' ? '' : rawApiKey;
+    const refreshToken = (form.refreshToken ?? '').trim();
+    if (!apiKey && !refreshToken) {
+      showNotification(
+        t('ai_providers.trae_import_key_required', { defaultValue: '请先填写 API 密钥或刷新令牌' }),
+        'error'
+      );
+      return;
+    }
+
+    setImporting(true);
+    try {
+      const result = await providersApi.importTraeModels({ baseUrl, apiKey, refreshToken: refreshToken || undefined });
+      if (!result.success || !result.models || result.models.length === 0) {
+        showNotification(
+          result.message || t('ai_providers.trae_import_failed', { defaultValue: '导入模型列表失败' }),
+          'error'
+        );
+        return;
+      }
+
+      // Update apiKey if the server returned a JWT
+      if (result.apiKey) {
+        setForm((prev) => ({ ...prev, apiKey: result.apiKey! }));
+      }
+
+      // Merge imported models: skip duplicates by name
+      const newEntries = result.models.map((m) => ({
+        name: m.name,
+        alias: m.name,
+        displayName: m.displayName || '',
+        configName: m.configName,
+        modelName: m.modelName,
+        contextLength: (m as Record<string, unknown>).context_length as number | undefined,
+      }));
+      setForm((prev) => {
+        const existingNames = new Set(prev.modelEntries.map((e) => e.name.trim()).filter(Boolean));
+        const toAdd = newEntries.filter((e) => !existingNames.has(e.name));
+        const merged = prev.modelEntries.some((e) => !e.name.trim() && !e.configName?.trim() && !e.modelName?.trim())
+          ? [...prev.modelEntries.filter((e) => e.name.trim() || e.configName?.trim() || e.modelName?.trim()), ...toAdd]
+          : [...prev.modelEntries, ...toAdd];
+        return { ...prev, modelEntries: merged.length ? merged : [{ name: '', alias: '', displayName: '', configName: '', modelName: '' }] };
+      });
+      showNotification(
+        t('ai_providers.trae_import_success', { defaultValue: `成功导入 ${result.models.length} 个模型` }).replace('${result.models.length}', String(result.models.length)),
+        'success'
+      );
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : '';
+      showNotification(
+        `${t('ai_providers.trae_import_failed', { defaultValue: '导入模型列表失败' })}: ${message}`,
+        'error'
+      );
+    } finally {
+      setImporting(false);
+    }
+  }, [form, showNotification, t]);
 
   const { allowNextNavigation } = useUnsavedChangesGuard({
     enabled: canGuard,
@@ -326,16 +397,19 @@ export function AiProvidersTraeEditPage() {
         models: form.modelEntries
           .map((entry) => {
             const name = entry.name.trim();
+            const displayName = String(entry.displayName ?? '').trim();
             const configName = String(entry.configName ?? '').trim();
             const modelName = String(entry.modelName ?? '').trim();
             if (!name && !configName && !modelName) return null;
             const model: ModelAlias = { name };
+            if (displayName) model.displayName = displayName;
             if (configName) model.configName = configName;
             if (modelName) model.modelName = modelName;
             return model;
           })
           .filter(Boolean) as ProviderKeyConfig['models'],
         excludedModels: parseExcludedModels(form.excludedText),
+        refreshToken: (form.refreshToken ?? '').trim() || undefined,
       };
 
       const nextList =
@@ -460,6 +534,13 @@ export function AiProvidersTraeEditPage() {
               onChange={(e) => setForm((prev) => ({ ...prev, proxyUrl: e.target.value }))}
               disabled={disableControls || saving}
             />
+            <Input
+              label="CLI 登录令牌:"
+              placeholder="请输入 CLI 登录令牌 (refresh token)"
+              value={form.refreshToken ?? ''}
+              onChange={(e) => setForm((prev) => ({ ...prev, refreshToken: e.target.value }))}
+              disabled={disableControls || saving}
+            />
             <HeaderInputList
               entries={form.headers}
               onChange={(entries) => setForm((prev) => ({ ...prev, headers: entries }))}
@@ -494,9 +575,19 @@ export function AiProvidersTraeEditPage() {
                     size="sm"
                     onClick={() => void runTest()}
                     loading={testStatus === 'loading'}
-                    disabled={disableControls || saving || testStatus === 'loading' || !form.apiKey.trim()}
+                    disabled={disableControls || saving || testStatus === 'loading' || (!form.apiKey.trim() && !String(form.refreshToken ?? '').trim())}
                   >
                     {t('ai_providers.trae_test_action', { defaultValue: '测试连接' })}
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => void handleImportModels()}
+                    loading={importing}
+                    disabled={disableControls || saving || importing || (!form.apiKey.trim() && !String(form.refreshToken ?? '').trim())}
+                    style={{ marginLeft: 8 }}
+                  >
+                    {t('ai_providers.trae_import_action', { defaultValue: '导入模型' })}
                   </Button>
                 </div>
               </div>
@@ -505,12 +596,13 @@ export function AiProvidersTraeEditPage() {
                   {testMessage}
                 </div>
               )}
-              <div className={styles.sectionHint}>{t('ai_providers.trae_models_hint', { defaultValue: '客户端模型名 → Config Name → Model Name' })}</div>
+              <div className={styles.sectionHint}>{t('ai_providers.trae_models_hint', { defaultValue: '客户端模型名 | Display Name | Config Name | Model Name' })}</div>
               <TraeModelInputList
                 entries={form.modelEntries}
                 onChange={(entries) => setForm((prev) => ({ ...prev, modelEntries: entries }))}
                 addLabel={t('ai_providers.trae_models_add_btn', { defaultValue: '添加模型' })}
                 namePlaceholder={t('common.model_name_placeholder')}
+                displayNamePlaceholder={t('ai_providers.trae_display_name_placeholder', { defaultValue: 'display name' })}
                 configNamePlaceholder={t('ai_providers.trae_config_name_placeholder', { defaultValue: 'config name' })}
                 modelNamePlaceholder={t('ai_providers.trae_model_name_placeholder', { defaultValue: 'model name' })}
                 removeButtonTitle={t('common.delete')}

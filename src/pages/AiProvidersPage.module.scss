@@ -768,6 +768,15 @@ $openai-toolbar-control-height: 36px;
   line-height: 1.4;
 }
 
+.modelContextLength {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  background-color: var(--bg-tertiary);
+  padding: 2px 8px;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
 .modelDiscoveryToolbar {
   display: flex;
   align-items: center;
@@ -1090,7 +1099,7 @@ $openai-toolbar-control-height: 36px;
 
 .modelInputRow {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto auto;
   gap: $spacing-sm;
   align-items: center;
 
@@ -1110,6 +1119,10 @@ $openai-toolbar-control-height: 36px;
       grid-column: 2 / 3;
       grid-row: 1 / 2;
     }
+
+    > :nth-child(5) {
+      display: none;
+    }
   }
 }
 
@@ -1119,6 +1132,16 @@ $openai-toolbar-control-height: 36px;
 
 .modelRowRemoveButton {
   justify-self: center;
+}
+
+.model-context-length-badge {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  background-color: var(--bg-tertiary);
+  padding: 2px 8px;
+  border-radius: 10px;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .modelTestPanel {
