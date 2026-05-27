@@ -47,6 +47,9 @@ const serializeModelAliases = (models?: ModelAlias[]) =>
           if (model.configName) {
             payload['config-name'] = model.configName;
           }
+          if (model.displayName) {
+            payload['display-name'] = model.displayName;
+          }
           if (model.modelName) {
             payload['model-name'] = model.modelName;
           }
@@ -62,7 +65,11 @@ const serializeApiKeyEntry = (entry: ApiKeyEntry) => {
   return payload;
 };
 const serializeProviderKey = (config: ProviderKeyConfig) => {
-  const payload: Record<string, unknown> = { 'api-key': config.apiKey };
+  const payload: Record<string, unknown> = {};
+  // Skip api-key if it's the placeholder for Trae refresh-token-only configs
+  if (config.apiKey && config.apiKey !== '__TRAE_REFRESH_TOKEN_ONLY__') {
+    payload['api-key'] = config.apiKey;
+  }
   if (config.priority !== undefined) payload.priority = config.priority;
   if (config.prefix?.trim()) payload.prefix = config.prefix.trim();
   if (config.baseUrl) payload['base-url'] = config.baseUrl;
@@ -223,6 +230,9 @@ export const providersApi = {
   deleteTraeConfig: (apiKey: string, baseUrl?: string) =>
     apiClient.delete(`/trae-api-key${buildProviderDeleteQuery(apiKey, baseUrl)}`),
 
-  testTraeKey: (payload: { baseUrl: string; apiKey: string; configName: string; modelName: string }) =>
+  testTraeKey: (payload: { baseUrl: string; apiKey: string; refreshToken?: string; configName: string; modelName: string }) =>
     apiClient.post('/trae-api-key/test', payload),
+
+  importTraeModels: (payload: { baseUrl: string; apiKey: string; refreshToken?: string }) =>
+    apiClient.post<{ success: boolean; message?: string; models?: Array<{ name: string; displayName?: string; configName: string; modelName: string }>; apiKey?: string }>('/trae-api-key/import', payload),
 };

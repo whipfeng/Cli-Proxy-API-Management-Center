@@ -140,6 +140,12 @@ export function TraeSection({
                     <span className={styles.fieldValue}>{item.proxyUrl}</span>
                   </div>
                 )}
+                {item.refreshToken && (
+                  <div className={styles.fieldRow}>
+                    <span className={styles.fieldLabel}>CLI 登录令牌:</span>
+                    <span className={styles.fieldValue}>{maskApiKey(item.refreshToken)}</span>
+                  </div>
+                )}
                 {headerEntries.length > 0 && (
                   <div className={styles.headerBadgeList}>
                     {headerEntries.map(([key, value]) => (

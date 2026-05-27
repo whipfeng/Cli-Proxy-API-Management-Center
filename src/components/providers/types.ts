@@ -4,8 +4,10 @@ import type { HeaderEntry } from '@/utils/headers';
 export interface ModelEntry {
   name: string;
   alias: string;
+  displayName?: string;
   configName?: string;
   modelName?: string;
+  contextLength?: number;
 }
 
 export interface OpenAIFormState {

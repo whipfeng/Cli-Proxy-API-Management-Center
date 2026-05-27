@@ -75,6 +75,15 @@ export function AuthFileModelsModal(props: AuthFileModelsModalProps) {
                   <span className={styles.modelDisplayName}>{model.display_name}</span>
                 )}
                 {model.type && <span className={styles.modelType}>{model.type}</span>}
+                {model.context_length ? (
+                  <span className={styles.modelContextLength}>
+                    {model.context_length >= 1000000
+                      ? `${(model.context_length / 1000000).toFixed(1)}M`
+                      : model.context_length >= 1000
+                        ? `${Math.round(model.context_length / 1000)}K`
+                        : String(model.context_length)}
+                  </span>
+                ) : null}
                 {excludedModel && (
                   <span className={styles.modelExcludedBadge}>
                     {t('auth_files.models_excluded_badge', { defaultValue: '已禁用' })}

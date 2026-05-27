@@ -43,7 +43,8 @@ const normalizeModelAliases = (models: unknown): ModelAlias[] => {
       const alias = item.alias || item.display_name || item.displayName;
       const priority = item.priority ?? item['priority'];
       const testModel = item['test-model'] ?? item.testModel;
-      const configName = item['config-name'] ?? item.configName ?? item['config_name'];
+const configName = item['config-name'] ?? item.configName ?? item['config_name'];
+      const displayName = item['display-name'] ?? item.displayName ?? item['display_name'];
       const modelName = item['model-name'] ?? item.modelName ?? item['model_name'];
       const entry: ModelAlias = { name: String(name) };
       if (alias && alias !== name) {
@@ -58,8 +59,11 @@ const normalizeModelAliases = (models: unknown): ModelAlias[] => {
       if (testModel) {
         entry.testModel = String(testModel);
       }
-      if (configName) {
+if (configName) {
         entry.configName = String(configName);
+      }
+      if (displayName) {
+        entry.displayName = String(displayName);
       }
       if (modelName) {
         entry.modelName = String(modelName);
@@ -136,9 +140,15 @@ const normalizeProviderKeyConfig = (item: unknown): ProviderKeyConfig | null => 
   const record = isRecord(item) ? item : null;
   const apiKey = record?.['api-key'] ?? record?.apiKey ?? (typeof item === 'string' ? item : '');
   const trimmed = String(apiKey || '').trim();
-  if (!trimmed) return null;
+  // Allow configs that have at least apiKey or refreshToken (for Trae token-based auth)
+  const refreshTokenRaw = record?.['refresh-token'] ?? record?.refreshToken ?? record?.['refresh_token'];
+  const hasRefreshToken = refreshTokenRaw && String(refreshTokenRaw).trim();
+  const hasBaseUrl = record && (record['base-url'] ?? record.baseUrl);
+  const hasModels = Array.isArray(record?.models) && record.models.length > 0;
+  if (!trimmed && !hasRefreshToken && !hasBaseUrl && !hasModels) return null;
 
-  const config: ProviderKeyConfig = { apiKey: trimmed };
+  // Use placeholder for Trae configs that only have refreshToken
+  const config: ProviderKeyConfig = { apiKey: trimmed || '__TRAE_REFRESH_TOKEN_ONLY__' };
   const priority = record?.priority ?? record?.['priority'];
   if (priority !== undefined && priority !== null && String(priority).trim() !== '') {
     const parsed = Number(priority);
@@ -165,8 +175,7 @@ const normalizeProviderKeyConfig = (item: unknown): ProviderKeyConfig | null => 
       record?.excluded_models
 );
   if (excludedModels.length) config.excludedModels = excludedModels;
-  const refreshToken = record?.['refresh-token'] ?? record?.refreshToken ?? record?.['refresh_token'];
-  if (refreshToken) config.refreshToken = String(refreshToken);
+  if (refreshTokenRaw) config.refreshToken = String(refreshTokenRaw);
   const authIndex = normalizeAuthIndex(
     record?.['auth-index'] ?? record?.authIndex ?? record?.['auth_index']
   );
@@ -449,9 +458,16 @@ export const normalizeConfigResponse = (raw: unknown): Config => {
       .filter(Boolean) as ProviderKeyConfig[];
   }
 
-  const claudeList = raw['claude-api-key'] ?? raw.claudeApiKey ?? raw.claudeApiKeys;
+const claudeList = raw['claude-api-key'] ?? raw.claudeApiKey ?? raw.claudeApiKeys;
   if (Array.isArray(claudeList)) {
     config.claudeApiKeys = claudeList
+      .map((item) => normalizeProviderKeyConfig(item))
+      .filter(Boolean) as ProviderKeyConfig[];
+  }
+
+  const traeList = raw['trae-api-key'] ?? raw.traeApiKey ?? raw.traeApiKeys;
+  if (Array.isArray(traeList)) {
+    config.traeApiKeys = traeList
       .map((item) => normalizeProviderKeyConfig(item))
       .filter(Boolean) as ProviderKeyConfig[];
   }

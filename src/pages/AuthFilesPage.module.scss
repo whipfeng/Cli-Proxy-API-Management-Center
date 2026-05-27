@@ -1965,6 +1965,15 @@
   margin-left: auto;
 }
 
+.modelContextLength {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  background-color: var(--bg-tertiary);
+  padding: 2px 8px;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
 .modelItemExcluded {
   opacity: 0.6;
   background-color: var(--bg-tertiary);

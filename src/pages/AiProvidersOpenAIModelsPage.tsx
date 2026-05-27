@@ -303,6 +303,15 @@ export function AiProvidersOpenAIModelsPage() {
                         {model.description && (
                           <div className={styles.modelDiscoveryDesc}>{model.description}</div>
                         )}
+                        {model.contextLength != null && (
+                          <span className={styles.modelContextLength}>
+                            {model.contextLength >= 1000000
+                              ? `${(model.contextLength / 1000000).toFixed(1)}M`
+                              : model.contextLength >= 1000
+                                ? `${Math.round(model.contextLength / 1000)}K`
+                                : String(model.contextLength)}
+                          </span>
+                        )}
                       </div>
                     }
                   />

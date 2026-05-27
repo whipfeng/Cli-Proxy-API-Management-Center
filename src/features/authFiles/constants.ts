@@ -21,6 +21,7 @@ export type AuthFileModelItem = {
   display_name?: string;
   type?: string;
   owned_by?: string;
+  context_length?: number;
 };
 export type AuthFileIconAsset = string | { light: string; dark: string };
 

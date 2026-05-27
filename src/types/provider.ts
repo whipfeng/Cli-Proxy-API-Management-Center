@@ -8,6 +8,7 @@ export interface ModelAlias {
   alias?: string;
   priority?: number;
   testModel?: string;
+  displayName?: string;
   configName?: string;
   modelName?: string;
 }

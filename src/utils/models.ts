@@ -7,6 +7,7 @@ export interface ModelInfo {
   name: string;
   alias?: string;
   description?: string;
+  contextLength?: number;
 }
 
 const MODEL_CATEGORIES = [
@@ -46,12 +47,22 @@ export function normalizeModelList(payload: unknown, { dedupe = false } = {}): M
 
     const alias = entry.alias || entry.display_name || entry.displayName;
     const description = entry.description || entry.note || entry.comment;
+    let contextLength: number | undefined;
+    if (typeof entry.context_length === 'number' && Number.isFinite(entry.context_length)) {
+      contextLength = entry.context_length;
+    } else if (typeof entry.context_length === 'string') {
+      const parsed = Number.parseFloat(entry.context_length);
+      if (Number.isFinite(parsed)) contextLength = parsed;
+    }
     const model: ModelInfo = { name: String(name) };
     if (alias && alias !== name) {
       model.alias = String(alias);
     }
     if (description) {
       model.description = String(description);
+    }
+    if (contextLength !== undefined) {
+      model.contextLength = contextLength;
     }
     return model;
   };
