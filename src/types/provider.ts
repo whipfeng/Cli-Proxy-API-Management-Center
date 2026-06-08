@@ -53,6 +53,17 @@ export interface ProviderKeyConfig {
   cloak?: CloakConfig;
   authIndex?: string;
   refreshToken?: string;
+  healthStatus?: {
+    overall: 'healthy' | 'degraded' | 'unhealthy' | 'cooldown' | 'disabled';
+    is_available: boolean;
+    cooldown_until?: string;
+    cooldown_remaining?: string;
+    unavailable_models?: number;
+    total_models?: number;
+    quota_limited?: boolean;
+  };
+  lastError?: { code: number; message: string; time: string };
+  quota?: { exceeded: boolean; reason?: string; next_recover_at?: string; backoff_level?: number };
 }
 
 export interface OpenAIProviderConfig {

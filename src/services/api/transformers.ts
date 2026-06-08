@@ -213,6 +213,39 @@ const normalizeProviderKeyConfig = (item: unknown): ProviderKeyConfig | null => 
     }
   }
 
+  // Health status from runtime
+  const hsRaw = record?.['health_status'] ?? record?.healthStatus;
+  if (isRecord(hsRaw)) {
+    const hsOverall = typeof hsRaw.overall === 'string' ? hsRaw.overall : 'healthy';
+    const hs: any = {
+      overall: hsOverall,
+      is_available: Boolean(hsRaw.is_available ?? hsRaw.isAvailable ?? true),
+      cooldown_until: typeof hsRaw.cooldown_until === 'string' ? hsRaw.cooldown_until : (typeof hsRaw.cooldown === 'string' ? hsRaw.cooldown : undefined),
+      cooldown_remaining: typeof hsRaw.cooldown_remaining === 'string' ? hsRaw.cooldown_remaining : undefined,
+      unavailable_models: typeof hsRaw.unavailable_models === 'number' ? hsRaw.unavailable_models : undefined,
+      total_models: typeof hsRaw.total_models === 'number' ? hsRaw.total_models : undefined,
+      quota_limited: Boolean(hsRaw.quota_limited ?? hsRaw.quotaLimited ?? false),
+    };
+    config.healthStatus = hs as ProviderKeyConfig['healthStatus'];
+  }
+  const leRaw = record?.['last_error'] ?? record?.lastError;
+  if (isRecord(leRaw)) {
+    config.lastError = {
+      code: Number(typeof leRaw.code === 'number' ? leRaw.code : (typeof leRaw.httpStatus === 'number' ? leRaw.httpStatus : 0)),
+      message: String(typeof leRaw.message === 'string' ? leRaw.message : ''),
+      time: String(typeof leRaw.time === 'string' ? leRaw.time : ''),
+    };
+  }
+  const quotaRaw = record?.quota;
+  if (isRecord(quotaRaw) && Boolean(quotaRaw.exceeded)) {
+    config.quota = {
+      exceeded: true,
+      reason: typeof quotaRaw.reason === 'string' ? quotaRaw.reason : undefined,
+      next_recover_at: typeof quotaRaw.next_recover_at === 'string' ? quotaRaw.next_recover_at : (typeof quotaRaw.nextRecoverAt === 'string' ? quotaRaw.nextRecoverAt : undefined),
+      backoff_level: Number(typeof quotaRaw.backoff_level === 'number' ? quotaRaw.backoff_level : (typeof quotaRaw.backoffLevel === 'number' ? quotaRaw.backoffLevel : 0)),
+    };
+  }
+
   return config;
 };
 

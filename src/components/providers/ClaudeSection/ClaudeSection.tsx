@@ -180,6 +180,12 @@ export function ClaudeSection({
                     {t('ai_providers.config_disabled_badge')}
                   </div>
                 )}
+                {item.healthStatus && item.healthStatus.overall !== 'healthy' && (
+                  <div className={`status-badge ${healthBadgeClass(item.healthStatus.overall)}`} style={{ marginTop: 8, marginBottom: 0 }}
+                    title={healthBadgeTitle(item.healthStatus)}>
+                    {healthBadgeLabel(item.healthStatus)}
+                  </div>
+                )}
                 {item.models?.length ? (
                   <div className={styles.modelTagList}>
                     <span className={styles.modelCountLabel}>
@@ -225,4 +231,34 @@ export function ClaudeSection({
       </Card>
     </>
   );
+}
+
+function healthBadgeClass(overall: string): string {
+  switch (overall) {
+    case 'unhealthy': return 'danger';
+    case 'cooldown': return 'warning';
+    case 'degraded': return 'warning';
+    case 'disabled': return 'disabled';
+    default: return '';
+  }
+}
+
+function healthBadgeLabel(hs: NonNullable<ProviderKeyConfig['healthStatus']>): string {
+  switch (hs.overall) {
+    case 'unhealthy': return '\u2717 Unavailable';
+    case 'cooldown': return '\u23F1 ' + (hs.cooldown_remaining || 'Cooldown');
+    case 'degraded': return '\u26A0 Degraded';
+    case 'disabled': return '\u2298 Disabled';
+    default: return '';
+  }
+}
+
+function healthBadgeTitle(hs: NonNullable<ProviderKeyConfig['healthStatus']>): string {
+  const parts: string[] = [];
+  if (hs.unavailable_models != null && hs.total_models != null) {
+    parts.push(`${hs.unavailable_models}/${hs.total_models} models unavailable`);
+  }
+  if (hs.quota_limited) parts.push('Quota limited');
+  if (hs.cooldown_until) parts.push(`Until ${hs.cooldown_until}`);
+  return parts.join(' | ') || hs.overall;
 }
