@@ -19,6 +19,7 @@ export const modelsToEntries = (models?: ModelAlias[]): ModelEntry[] => {
     displayName: model.displayName || '',
     configName: model.configName || '',
     modelName: model.modelName || '',
+    contextLength: model.contextLength,
   }));
 };
 
@@ -42,6 +43,9 @@ export const entriesToModels = (entries: ModelEntry[]): ModelAlias[] => {
       }
       if (modelName) {
         model.modelName = modelName;
+      }
+      if (entry.contextLength != null) {
+        model.contextLength = entry.contextLength;
       }
       return model;
     });
