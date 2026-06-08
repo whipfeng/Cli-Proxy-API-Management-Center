@@ -21,6 +21,7 @@ export type ClaudeCloakBaseline = {
 } | null;
 
 export type ClaudeEditBaseline = {
+  name: string;
   apiKey: string;
   priority: number | null;
   prefix: string;

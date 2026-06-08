@@ -11,6 +11,7 @@ export interface ModelAlias {
   displayName?: string;
   configName?: string;
   modelName?: string;
+  contextLength?: number;
 }
 
 export interface ApiKeyEntry {
@@ -39,6 +40,7 @@ export interface GeminiKeyConfig {
 }
 
 export interface ProviderKeyConfig {
+  name?: string;
   apiKey: string;
   priority?: number;
   prefix?: string;

@@ -304,6 +304,13 @@ export function AiProvidersClaudeEditPage() {
         ) : (
           <div className={styles.openaiEditForm}>
             <Input
+              label={t('ai_providers.config_name_label', { defaultValue: '名称:' })}
+              placeholder={t('ai_providers.config_name_placeholder', { defaultValue: '可选，用于区分多个配置' })}
+              value={form.name ?? ''}
+              onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
+              disabled={saving || disableControls || isTesting}
+            />
+            <Input
               label={t('ai_providers.claude_add_modal_key_label')}
               value={form.apiKey}
               onChange={(e) => setForm((prev) => ({ ...prev, apiKey: e.target.value }))}

@@ -68,6 +68,10 @@ if (configName) {
       if (modelName) {
         entry.modelName = String(modelName);
       }
+      const contextLength = item.contextLength ?? item['context-length'] ?? item['context_length'];
+      if (contextLength !== undefined && contextLength !== null) {
+        entry.contextLength = Number(contextLength);
+      }
       return entry;
     })
     .filter(Boolean) as ModelAlias[];
@@ -149,6 +153,10 @@ const normalizeProviderKeyConfig = (item: unknown): ProviderKeyConfig | null => 
 
   // Use placeholder for Trae configs that only have refreshToken
   const config: ProviderKeyConfig = { apiKey: trimmed || '__TRAE_REFRESH_TOKEN_ONLY__' };
+  const nameRaw = record?.name;
+  if (typeof nameRaw === 'string' && nameRaw.trim()) {
+    config.name = nameRaw.trim();
+  }
   const priority = record?.priority ?? record?.['priority'];
   if (priority !== undefined && priority !== null && String(priority).trim() !== '') {
     const parsed = Number(priority);

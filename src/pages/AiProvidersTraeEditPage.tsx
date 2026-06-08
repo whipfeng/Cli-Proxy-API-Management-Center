@@ -25,6 +25,7 @@ type LocationState = { fromAiProviders?: boolean } | null;
 const DEFAULT_TRAE_BASE_URL = 'https://console.enterprise.trae.cn';
 
 const buildEmptyForm = (): ProviderFormState => ({
+  name: '',
   apiKey: '',
   priority: undefined,
   prefix: '',
@@ -56,6 +57,7 @@ const normalizeModelEntries = (entries: Array<{ name: string; alias: string; dis
   }, []);
 
 type TraeFormBaseline = {
+  name: string;
   apiKey: string;
   priority: number | null;
   prefix: string;
@@ -68,6 +70,7 @@ type TraeFormBaseline = {
 };
 
 const buildTraeBaseline = (form: ProviderFormState): TraeFormBaseline => ({
+  name: String(form.name ?? '').trim(),
   apiKey: String(form.apiKey ?? '').trim(),
   priority:
     form.priority !== undefined && Number.isFinite(form.priority) ? Math.trunc(form.priority) : null,
@@ -221,6 +224,7 @@ export function AiProvidersTraeEditPage() {
     [baseline.excludedModels, normalizedExcludedModels]
   );
   const isDirty =
+    baseline.name !== String(form.name ?? '').trim() ||
     baseline.apiKey !== form.apiKey.trim() ||
     baseline.priority !== normalizedPriority ||
     baseline.prefix !== String(form.prefix ?? '').trim() ||
@@ -385,6 +389,7 @@ export function AiProvidersTraeEditPage() {
     setError('');
     try {
       const payload: ProviderKeyConfig = {
+        name: form.name?.trim() || undefined,
         apiKey: form.apiKey.trim(),
         priority:
           form.priority !== undefined && Number.isFinite(form.priority)
@@ -489,6 +494,13 @@ export function AiProvidersTraeEditPage() {
           <div className="hint">{t('common.invalid_provider_index')}</div>
         ) : (
           <>
+            <Input
+              label={t('ai_providers.config_name_label', { defaultValue: '名称:' })}
+              placeholder={t('ai_providers.config_name_placeholder', { defaultValue: '可选，用于区分多个配置' })}
+              value={form.name ?? ''}
+              onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
+              disabled={disableControls || saving}
+            />
             <Input
               label={t('ai_providers.trae_add_modal_key_label', { defaultValue: 'API密钥:' })}
               placeholder={t('ai_providers.trae_add_modal_key_placeholder', { defaultValue: '请输入Trae API密钥' })}

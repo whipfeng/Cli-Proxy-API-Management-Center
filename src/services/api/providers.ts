@@ -66,6 +66,7 @@ const serializeApiKeyEntry = (entry: ApiKeyEntry) => {
 };
 const serializeProviderKey = (config: ProviderKeyConfig) => {
   const payload: Record<string, unknown> = {};
+  if (config.name?.trim()) payload.name = config.name.trim();
   // Skip api-key if it's the placeholder for Trae refresh-token-only configs
   if (config.apiKey && config.apiKey !== '__TRAE_REFRESH_TOKEN_ONLY__') {
     payload['api-key'] = config.apiKey;

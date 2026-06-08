@@ -41,6 +41,7 @@ export type ClaudeEditOutletContext = {
 };
 
 const buildEmptyForm = (): ProviderFormState => ({
+  name: '',
   apiKey: '',
   priority: undefined,
   prefix: '',
@@ -92,6 +93,7 @@ const normalizeCloakConfig = (cloak: ProviderFormState['cloak']) => {
 };
 
 const buildClaudeBaseline = (form: ProviderFormState): ClaudeEditBaseline => ({
+  name: String(form.name ?? '').trim(),
   apiKey: String(form.apiKey ?? '').trim(),
   priority:
     form.priority !== undefined && Number.isFinite(form.priority) ? Math.trunc(form.priority) : null,
@@ -309,7 +311,8 @@ export function AiProvidersClaudeEditLayout() {
   const isDirty =
     Boolean(draft?.initialized) &&
     baseline !== null &&
-    (baseline.apiKey !== form.apiKey.trim() ||
+    (baseline.name !== String(form.name ?? '').trim() ||
+      baseline.apiKey !== form.apiKey.trim() ||
       baseline.priority !== normalizedPriority ||
       baseline.prefix !== String(form.prefix ?? '').trim() ||
       baseline.baseUrl !== String(form.baseUrl ?? '').trim() ||
@@ -404,6 +407,7 @@ export function AiProvidersClaudeEditLayout() {
     setSaving(true);
     try {
       const payload: ProviderKeyConfig = {
+        name: form.name?.trim() || undefined,
         apiKey: form.apiKey.trim(),
         priority: form.priority !== undefined ? Math.trunc(form.priority) : undefined,
         prefix: form.prefix?.trim() || undefined,

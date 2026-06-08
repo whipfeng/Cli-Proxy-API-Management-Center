@@ -96,15 +96,15 @@ export function TraeModelInputList({
               onChange={(e) => updateEntry(index, 'modelName', e.target.value)}
               disabled={disabled}
             />
-            {entry.contextLength != null && (
-              <span className="model-context-length-badge">
-                {entry.contextLength >= 1000000
-                  ? `${(entry.contextLength / 1000000).toFixed(1)}M`
-                  : entry.contextLength >= 1000
-                    ? `${Math.round(entry.contextLength / 1000)}K`
-                    : String(entry.contextLength)}
+            <span className="model-context-length-badge" title={String(entry.contextLength ?? '-')}>
+                {entry.contextLength != null && entry.contextLength > 0
+                  ? entry.contextLength >= 1000000
+                    ? `${(entry.contextLength / 1000000).toFixed(1)}M`
+                    : entry.contextLength >= 1000
+                      ? `${Math.round(entry.contextLength / 1000)}K`
+                      : String(entry.contextLength)
+                  : '-'}
               </span>
-            )}
             <Button
               variant="ghost"
               size="sm"
